@@ -18,12 +18,17 @@ type StatusCodes = 200 | 201 | 400 | 401 | 403 | 405 | 500 | 502;
 declare global {
   namespace Express {
     interface Response {
-        respond(resultCode: number, msg: string): any;      
-        respond(resultCode: string, msg: string): any;
-        respond(resultCode: number, msg: string, data: any): any;
-        respond(resultCode: string, msg: string, data: any): any;
-        
-        reject(errors: ResponseError[]): any;
+      respond(resultCode: number, msg: string): any;
+      respond(resultCode: string, msg: string): any;
+      respond(resultCode: number, msg: string, data: any): any;
+      respond(resultCode: string, msg: string, data: any): any;
+      respond(resultCode: number, msg: string, data: any, metadata: any): any;
+      respond(resultCode: string, msg: string, data: any, metadata: any): any;
+
+      /**
+       * @deprecated Since version 1.0. Will be deleted in version 3.0. Use respond instead
+       */
+      reject(errors: ResponseError[]): any;
     }
   }
 
@@ -50,38 +55,46 @@ export function respond(
   response.end(JSON.stringify(message));
 }
 
-export const expressMiddleware = () => (
-  req: Request,
-  res: Response,
-  next: any
-): void => {
-  res.respond = (
-    resultCode: number | string,
-    msg: string,
-    data?: any
-  ): void => {
-    let responseMessage = {
-      code: resultCode,
-      msg,
-      data,
+export const expressMiddleware =
+  () =>
+  (req: Request, res: Response, next: any): void => {
+    res.respond = (
+      resultCode: number | string,
+      msg: string,
+      data?: any,
+      metadata?: any
+    ): void => {
+      // * Construct response message
+      let responseMessage = {
+        _metadata: metadata,
+        code: resultCode,
+        msg,
+        data,
+      };
+
+      if (!data) {
+        delete responseMessage.data;
+      }
+
+      if (!metadata) {
+        delete responseMessage._metadata;
+      }
+
+      res.send(responseMessage);
+      return;
     };
 
-    if (!data) {
-      delete responseMessage.data;
-    }
+    /**
+     * @deprecated Since version 1.0. Will be deleted in version 3.0. Use respond instead
+     */
+    res.reject = (errors: ResponseError[], statusCode?: number) => {
+      res.status(502);
+      res.send({
+        data: null,
+        errors,
+      });
+      return;
+    };
 
-    res.send(responseMessage);
-    return;
+    next && next();
   };
-
-  res.reject = (errors: ResponseError[], statusCode?: number) => {
-    res.status(502);
-    res.send({
-      data: null,
-      errors,
-    });
-    return;
-  };
-
-  next && next();
-};
