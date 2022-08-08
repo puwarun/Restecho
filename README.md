@@ -1,2 +1,2 @@
 # Restecho
-Return response a htto result
+Return response a http result
