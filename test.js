@@ -1,8 +1,8 @@
-let responsio = require("./build");
+let restecho = require("./build");
 let express = require("express");
 
 let app = express();
-app.use(responsio.expressMiddleware());
+app.use(restecho.expressMiddleware());
 
 app.get("/test/1", (req, res) => {
   res.status(500).respond(0, "Success", null);
